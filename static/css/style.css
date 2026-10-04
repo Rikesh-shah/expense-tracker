@@ -602,6 +602,11 @@ a { color: inherit; text-decoration: none; }
 
 .legal-body a:hover { text-decoration: underline; }
 
+.legal-body strong {
+    color: var(--ink);
+    font-weight: 600;
+}
+
 /* ------------------------------------------------------------------ */
 /* Footer                                                              */
 /* ------------------------------------------------------------------ */
