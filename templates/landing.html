@@ -27,7 +27,7 @@
 
         <div class="lp-actions">
             <a href="{{ url_for('register') }}" class="lp-btn">Create free account</a>
-            <a href="#" class="lp-btn">See how it works</a>
+            <button type="button" class="lp-btn" data-video-open aria-haspopup="dialog" aria-controls="video-modal">See how it works</button>
         </div>
     </div>
 
@@ -73,6 +73,20 @@
     </div>
 </section>
 
+<div class="lp-modal" id="video-modal" role="dialog" aria-modal="true" aria-label="How Spendly works" hidden>
+    <div class="lp-modal-dialog">
+        <button type="button" class="lp-modal-close" data-video-close aria-label="Close video">&times;</button>
+        <div class="lp-modal-video">
+            {# Placeholder video — replace data-src with the real embed URL #}
+            <iframe
+                data-src="https://www.youtube-nocookie.com/embed/M7lc1UVf-VE"
+                title="How Spendly works"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
+        </div>
+    </div>
+</div>
+
 <section class="features">
     <div class="features-inner">
         <div class="feature-card">
@@ -101,4 +115,42 @@
     </div>
 </section>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        var modal = document.getElementById('video-modal');
+        var iframe = modal.querySelector('iframe');
+        var openBtn = document.querySelector('[data-video-open]');
+        var closeBtn = modal.querySelector('[data-video-close]');
+
+        function openModal() {
+            iframe.src = iframe.dataset.src + '?autoplay=1&rel=0';
+            modal.hidden = false;
+            document.body.classList.add('lp-modal-open');
+            closeBtn.focus();
+        }
+
+        function closeModal() {
+            // Clearing src unloads the player, so the video stops completely
+            iframe.removeAttribute('src');
+            modal.hidden = true;
+            document.body.classList.remove('lp-modal-open');
+            openBtn.focus();
+        }
+
+        openBtn.addEventListener('click', openModal);
+        closeBtn.addEventListener('click', closeModal);
+
+        // Clicks on the dark overlay (outside the dialog) close the modal
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) closeModal();
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && !modal.hidden) closeModal();
+        });
+    })();
+</script>
 {% endblock %}
