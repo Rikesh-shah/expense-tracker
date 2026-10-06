@@ -69,3 +69,19 @@ def seed_db():
     )
     conn.commit()
     conn.close()
+
+
+def create_user(name, email, password):
+    from werkzeug.security import generate_password_hash
+    conn = get_db()
+    try:
+        cursor = conn.execute(
+            'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
+            (name, email, generate_password_hash(password)),
+        )
+        conn.commit()
+        return cursor.lastrowid
+    except sqlite3.IntegrityError:
+        return None
+    finally:
+        conn.close()
