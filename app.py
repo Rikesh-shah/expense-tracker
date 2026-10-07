@@ -1,6 +1,10 @@
+from datetime import datetime
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
-from database.db import create_user, get_db, get_user_by_email, init_db, seed_db
+from database.db import (
+    create_user, get_db, get_user_by_email, init_db, seed_db,
+    get_user_by_id, get_expenses_for_user, get_stats_for_user, get_category_breakdown,
+)
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-key"
@@ -83,29 +87,50 @@ def profile():
     if not session.get("user_id"):
         return redirect(url_for("login"))
 
+    user_id = session["user_id"]
+    raw_user = get_user_by_id(user_id)
+
+    parts = raw_user["name"].split()
+    initials = "".join(p[0].upper() for p in parts if p)[:2]
+    member_since = datetime.strptime(raw_user["created_at"], "%Y-%m-%d %H:%M:%S").strftime("%B %Y")
+
     user = {
-        "name":         "Priya Sharma",
-        "email":        "priya.sharma@example.com",
-        "initials":     "PS",
-        "member_since": "January 2024",
+        "name":         raw_user["name"],
+        "email":        raw_user["email"],
+        "initials":     initials,
+        "member_since": member_since,
     }
+
+    raw_stats = get_stats_for_user(user_id)
     stats = {
-        "total_spent":       "12,450",
-        "transaction_count": 38,
-        "top_category":      "Food",
+        "total_spent":       "{:,.2f}".format(raw_stats["total_spent"]),
+        "transaction_count": raw_stats["transaction_count"],
+        "top_category":      raw_stats["top_category"] or "N/A",
     }
+
     transactions = [
-        {"date": "2 Oct 2024",  "description": "Swiggy – dinner",    "category": "Food",      "category_slug": "food",      "amount": "640"},
-        {"date": "1 Oct 2024",  "description": "Metro card recharge", "category": "Transport", "category_slug": "transport", "amount": "500"},
-        {"date": "30 Sep 2024", "description": "Amazon – headphones", "category": "Shopping",  "category_slug": "shopping",  "amount": "2,199"},
-        {"date": "29 Sep 2024", "description": "Electricity bill",    "category": "Utilities", "category_slug": "utilities", "amount": "1,120"},
+        {
+            "date":          datetime.strptime(row["date"], "%Y-%m-%d").strftime("%-d %b %Y"),
+            "description":   row["description"] or "",
+            "category":      row["category"],
+            "category_slug": row["category"].lower().replace(" ", "-"),
+            "amount":        "{:,.2f}".format(row["amount"]),
+        }
+        for row in get_expenses_for_user(user_id)
     ]
+
+    raw_cats = get_category_breakdown(user_id)
+    grand_total = sum(r["total"] for r in raw_cats)
     categories = [
-        {"name": "Food",      "slug": "food",      "amount": "4,800", "percent": 38},
-        {"name": "Shopping",  "slug": "shopping",  "amount": "3,600", "percent": 29},
-        {"name": "Utilities", "slug": "utilities", "amount": "2,400", "percent": 19},
-        {"name": "Transport", "slug": "transport", "amount": "1,650", "percent": 13},
+        {
+            "name":    row["category"],
+            "slug":    row["category"].lower().replace(" ", "-"),
+            "amount":  "{:,.2f}".format(row["total"]),
+            "percent": int(round(row["total"] / grand_total * 100)) if grand_total > 0 else 0,
+        }
+        for row in raw_cats
     ]
+
     return render_template(
         "profile.html",
         user=user,
