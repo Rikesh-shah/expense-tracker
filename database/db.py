@@ -107,13 +107,23 @@ def get_user_by_id(user_id):
         conn.close()
 
 
-def get_expenses_for_user(user_id):
+def get_expenses_for_user(user_id, date_from=None, date_to=None):
     conn = get_db()
     try:
-        return conn.execute(
-            'SELECT * FROM expenses WHERE user_id = ? ORDER BY date DESC',
-            (user_id,)
-        ).fetchall()
+        conditions = ['user_id = ?']
+        params = [user_id]
+        if date_from:
+            conditions.append('date >= ?')
+            params.append(date_from)
+        if date_to:
+            conditions.append('date <= ?')
+            params.append(date_to)
+        # conditions holds only hardcoded string literals — user input flows
+        # through params as ? placeholders, never into the clause structure.
+        sql = 'SELECT * FROM expenses WHERE {} ORDER BY date DESC'.format(
+            ' AND '.join(conditions)
+        )
+        return conn.execute(sql, tuple(params)).fetchall()
     finally:
         conn.close()
 

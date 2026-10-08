@@ -54,6 +54,25 @@
                     <i data-lucide="list"></i>
                     Recent Transactions
                 </h2>
+                <form method="get" action="{{ url_for('profile') }}" class="date-filter-form">
+                    <div class="date-filter-field">
+                        <label for="date_from" class="date-filter-label">From</label>
+                        <input type="date" id="date_from" name="date_from"
+                               value="{{ date_from }}" class="date-filter-input">
+                    </div>
+                    <div class="date-filter-field">
+                        <label for="date_to" class="date-filter-label">To</label>
+                        <input type="date" id="date_to" name="date_to"
+                               value="{{ date_to }}" class="date-filter-input">
+                    </div>
+                    <button type="submit" class="date-filter-submit">Filter</button>
+                    {% if date_from or date_to %}
+                    <a href="{{ url_for('profile') }}" class="date-filter-clear">Clear</a>
+                    {% endif %}
+                </form>
+                {% if filter_label %}
+                <p class="filter-active-label">{{ filter_label }}</p>
+                {% endif %}
                 <div class="table-wrap">
                     <table class="expense-table">
                         <thead>

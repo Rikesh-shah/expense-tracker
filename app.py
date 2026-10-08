@@ -82,12 +82,40 @@ def logout():
     return redirect(url_for("landing"))
 
 
+def _build_filter_label(date_from, date_to):
+    fmt = lambda d: datetime.strptime(d, '%Y-%m-%d').strftime('%-d %b %Y')
+    if date_from and date_to:
+        return 'Showing results from {} to {}'.format(fmt(date_from), fmt(date_to))
+    if date_from:
+        return 'Showing results from {} onwards'.format(fmt(date_from))
+    if date_to:
+        return 'Showing results up to {}'.format(fmt(date_to))
+    return None
+
+
 @app.route("/profile")
 def profile():
     if not session.get("user_id"):
         return redirect(url_for("login"))
 
     user_id = session["user_id"]
+
+    date_from = date_to = None
+    raw_from = request.args.get('date_from', '').strip()
+    raw_to = request.args.get('date_to', '').strip()
+    if raw_from:
+        try:
+            datetime.strptime(raw_from, '%Y-%m-%d')
+            date_from = raw_from
+        except ValueError:
+            pass
+    if raw_to:
+        try:
+            datetime.strptime(raw_to, '%Y-%m-%d')
+            date_to = raw_to
+        except ValueError:
+            pass
+
     raw_user = get_user_by_id(user_id)
 
     parts = raw_user["name"].split()
@@ -116,8 +144,10 @@ def profile():
             "category_slug": row["category"].lower().replace(" ", "-"),
             "amount":        "{:,.2f}".format(row["amount"]),
         }
-        for row in get_expenses_for_user(user_id)
+        for row in get_expenses_for_user(user_id, date_from=date_from, date_to=date_to)
     ]
+
+    filter_label = _build_filter_label(date_from, date_to)
 
     raw_cats = get_category_breakdown(user_id)
     grand_total = sum(r["total"] for r in raw_cats)
@@ -137,6 +167,9 @@ def profile():
         stats=stats,
         transactions=transactions,
         categories=categories,
+        date_from=date_from or '',
+        date_to=date_to or '',
+        filter_label=filter_label,
     )
 
 
