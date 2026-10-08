@@ -50,10 +50,13 @@
 
             <!-- Section 3: Transaction history -->
             <section class="transactions-section">
-                <h2 class="section-heading">
-                    <i data-lucide="list"></i>
-                    Recent Transactions
-                </h2>
+                <div class="section-heading-row">
+                    <h2 class="section-heading">
+                        <i data-lucide="list"></i>
+                        Recent Transactions
+                    </h2>
+                    <a href="{{ url_for('add_expense') }}" class="btn-primary">+ Add Expense</a>
+                </div>
                 <form method="get" action="{{ url_for('profile') }}" class="date-filter-form">
                     <div class="date-filter-field">
                         <label for="date_from" class="date-filter-label">From</label>
