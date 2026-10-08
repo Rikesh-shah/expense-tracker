@@ -489,6 +489,24 @@ a { color: inherit; text-decoration: none; }
 
 .btn-submit:hover { background: var(--accent); }
 
+.auth-footer {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.field-optional {
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+    font-weight: 400;
+}
+
+.section-heading-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
 .auth-switch {
     text-align: center;
     font-size: 0.875rem;

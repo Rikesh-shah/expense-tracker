@@ -4,6 +4,7 @@ from werkzeug.security import check_password_hash
 from database.db import (
     create_user, get_db, get_user_by_email, init_db, seed_db,
     get_user_by_id, get_expenses_for_user, get_stats_for_user, get_category_breakdown,
+    insert_expense,
 )
 
 app = Flask(__name__)
@@ -180,9 +181,61 @@ def analytics():
     return render_template("analytics.html")
 
 
-@app.route("/expenses/add")
+# Single source of truth for valid expense categories.
+# The insert route validates against this list before writing to the DB.
+CATEGORIES = ['Food', 'Transport', 'Bills', 'Health', 'Entertainment', 'Shopping', 'Other']
+
+
+def _validate_expense_form(raw_amount, raw_category, raw_date, raw_description):
+    """Return (error_string_or_None, parsed_amount_or_None)."""
+    try:
+        amount = float(raw_amount)
+        if amount <= 0:
+            raise ValueError
+    except (ValueError, TypeError):
+        return "Amount must be a number greater than 0.", None
+
+    if raw_category not in CATEGORIES:
+        return "Please select a valid category.", None
+
+    try:
+        datetime.strptime(raw_date, "%Y-%m-%d")
+    except ValueError:
+        return "Please enter a valid date.", None
+
+    if len(raw_description) > 200:
+        return "Description must be 200 characters or fewer.", None
+
+    return None, amount
+
+
+@app.route("/expenses/add", methods=["GET", "POST"])
 def add_expense():
-    return "Add expense — coming in Step 7"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        raw_amount      = request.form.get("amount", "").strip()
+        raw_category    = request.form.get("category", "").strip()
+        raw_date        = request.form.get("date", "").strip()
+        raw_description = request.form.get("description", "").strip()
+
+        error, amount = _validate_expense_form(raw_amount, raw_category, raw_date, raw_description)
+        if error:
+            return render_template(
+                "add_expense.html",
+                error=error,
+                categories=CATEGORIES,
+                form={"amount": raw_amount, "category": raw_category,
+                      "date": raw_date, "description": raw_description},
+            )
+
+        insert_expense(session["user_id"], amount, raw_category, raw_date, raw_description or None)
+        flash("Expense added.", "success")
+        return redirect(url_for("profile"))
+
+    today = datetime.today().strftime("%Y-%m-%d")
+    return render_template("add_expense.html", categories=CATEGORIES, today=today, form={})
 
 
 @app.route("/expenses/<int:id>/edit")
