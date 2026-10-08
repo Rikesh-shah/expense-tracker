@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from flask import (
     Flask,
@@ -23,6 +24,7 @@ from database.db import (
     insert_expense,
     get_expense_by_id,
     update_expense,
+    delete_expense as db_delete_expense,
 )
 
 app = Flask(__name__)
@@ -339,13 +341,24 @@ def edit_expense(id):
     )
 
 
-@app.route("/expenses/<int:id>/delete")
+@app.route("/expenses/<int:id>/delete", methods=["POST"])
 def delete_expense(id):
-    return "Delete expense — coming in Step 9"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    expense = get_expense_by_id(id, session["user_id"])
+    if expense is None:
+        abort(404)
+
+    db_delete_expense(id, session["user_id"])
+    flash("Expense deleted.", "success")
+    return redirect(url_for("profile"))
 
 
 if __name__ == "__main__":
     with app.app_context():
         init_db()
         seed_db()
-    app.run(debug=True, port=5001)
+    port = int(os.environ.get("PORT", 5001))
+    debug = "RAILWAY_ENVIRONMENT" not in os.environ
+    app.run(debug=debug, host="0.0.0.0", port=port)
