@@ -84,6 +84,7 @@
                                 <th>Description</th>
                                 <th>Category</th>
                                 <th class="col-amount">Amount</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -97,6 +98,9 @@
                                     </span>
                                 </td>
                                 <td class="col-amount">₹{{ tx.amount }}</td>
+                                <td>
+                                    <a href="{{ url_for('edit_expense', id=tx.id) }}" class="btn-ghost btn-sm">Edit</a>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
