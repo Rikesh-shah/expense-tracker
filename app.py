@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import (
     Flask,
     abort,
@@ -107,6 +107,15 @@ def logout():
     return redirect(url_for("landing"))
 
 
+def _months_ago(n):
+    today = datetime.today()
+    month = today.month - n
+    year = today.year + (month - 1) // 12
+    month = ((month - 1) % 12) + 1
+    day = min(today.day, [31, 28, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month])
+    return datetime(year, month, day).strftime("%Y-%m-%d")
+
+
 def _build_filter_label(date_from, date_to):
     fmt = lambda d: datetime.strptime(d, "%Y-%m-%d").strftime("%-d %b %Y")
     if date_from and date_to:
@@ -177,6 +186,18 @@ def profile():
 
     filter_label = _build_filter_label(date_from, date_to)
 
+    today_str = datetime.today().strftime("%Y-%m-%d")
+    presets = [
+        (
+            "Last 7 days",
+            (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d"),
+            today_str,
+        ),
+        ("Last month", _months_ago(1), today_str),
+        ("Last 3 months", _months_ago(3), today_str),
+        ("Last 6 months", _months_ago(6), today_str),
+    ]
+
     raw_cats = get_category_breakdown(user_id)
     grand_total = sum(r["total"] for r in raw_cats)
     categories = [
@@ -200,6 +221,7 @@ def profile():
         date_from=date_from or "",
         date_to=date_to or "",
         filter_label=filter_label,
+        presets=presets,
     )
 
 

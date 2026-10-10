@@ -57,6 +57,14 @@
                     </h2>
                     <a href="{{ url_for('add_expense') }}" class="btn-primary">+ Add Expense</a>
                 </div>
+                <div class="filter-presets">
+                    {% for label, from_val, to_val in presets %}
+                    <a href="{{ url_for('profile') }}?date_from={{ from_val }}&date_to={{ to_val }}"
+                       class="filter-preset{% if date_from == from_val and date_to == to_val %} filter-preset--active{% endif %}">
+                        {{ label }}
+                    </a>
+                    {% endfor %}
+                </div>
                 <form method="get" action="{{ url_for('profile') }}" class="date-filter-form">
                     <div class="date-filter-field">
                         <label for="date_from" class="date-filter-label">From</label>
